@@ -15,4 +15,8 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
     Page<Album> findAllByArtist(Artist artist, Pageable pageable);
 
     Optional<Album> findByTitleIgnoreCaseContaining(String title);
+
+    boolean existsByTitleIgnoreCase(String title);
+
+    boolean existsByTitleIgnoreCaseAndArtistAndIdNot(String title, Artist artist, Long id);
 }

@@ -31,7 +31,6 @@ public class ArtistService {
 
     @Transactional(readOnly = true)
     public Page<ArtistListDTO> list(Pageable pageable) {
-
         return repository.findAll(pageable).map(ArtistListDTO::new);
     }
 
@@ -41,14 +40,19 @@ public class ArtistService {
             throw new IllegalArgumentException("At least one field must be filled to update!");
 
         Artist artist = repository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Artist with the id \"" + id + "\" not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Artist not found!"));
+
+        if(repository.existsByNameIgnoreCase(dto.name())){
+            throw new IllegalArgumentException("Artist with the name " + dto.name()
+                    + " already exists!");
+        }
         artist.update(dto);
     }
 
     @Transactional
     public void delete(Long id) {
         if (!repository.existsById(id)) {
-            throw new EntityNotFoundException("Artist with the id \"" + id + "\" not found!");
+            throw new EntityNotFoundException("Artist not found!");
         }
         repository.deleteById(id);
     }

@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface MusicRepository extends JpaRepository<Music, Long> {
     Page<Music> findAllByArtist(Artist artist, Pageable pageable);
 
-
-
     Page<Music> findAllByArtistAndAlbum(Artist artist, Album album, Pageable pageable);
+
+    boolean existsByTitleIgnoreCaseAndArtistAndIdNot(String title, Artist artist, Long id);
 }

@@ -28,18 +28,13 @@ public class MusicService {
     private AlbumRepository albumRepository;
 
     @Transactional
-    public Long create(String artistName, String albumTitle, MusicCreateDTO dto) {
-        String formatArtistName = artistName.trim().replaceAll("\\s+", " ");
-        Artist artist = artistRepository.findAll().stream()
-                .filter(a -> a.getName().replaceAll("\\s+", "").equalsIgnoreCase(formatArtistName.replaceAll("\\s+", "")))
-                .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("Artist with name \"" + artistName + "\" not found."));
+    public Long create(Long artistId, Long albumId, MusicCreateDTO dto) {
 
-        String formatAlbumTitle = albumTitle.trim().replaceAll("\\s+", " ");
-        Album album = albumRepository.findAll().stream()
-                .filter(a -> a.getTitle().replaceAll("\\s+", "").equalsIgnoreCase(formatAlbumTitle.replaceAll("\\s+", "")))
-                .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("Album with title \"" + albumTitle + "\" not found."));
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new EntityNotFoundException("Artist not found!"));
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new EntityNotFoundException("Album not found!"));
+
 
         Music music = new Music(dto.title(), artist, album, dto.length());
         musicRepository.save(music);
@@ -52,45 +47,45 @@ public class MusicService {
     }
 
     @Transactional(readOnly = true)
-    public Page<MusicListDTO> listByArtist(Pageable pageable, String artistName) {
-        String formatName = artistName.trim().replaceAll("\\s+", " ");
-        Artist artist = artistRepository.findAll().stream()
-                .filter(a -> a.getName().replaceAll("\\s+", "").equalsIgnoreCase(formatName.replaceAll("\\s+", "")))
-                .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("Artist with name \"" + artistName + "\" not found."));
-
+    public Page<MusicListDTO> listByArtist(Long artistId, Pageable pageable) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new EntityNotFoundException("Artist not found!"));
 
         return musicRepository.findAllByArtist(artist, pageable).map(MusicListDTO::new);
     }
 
-    public Page<MusicListDTO> listByArtistAndAlbum(Pageable pageable, String artistName, String albumTitle) {
-        String formatArtistName = artistName.trim().replaceAll("\\s+", " ");
-        Artist artist = artistRepository.findAll().stream()
-                .filter(a -> a.getName().replaceAll("\\s+", "").equalsIgnoreCase(formatArtistName.replaceAll("\\s+", "")))
-                .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("Artist with name \"" + artistName + "\" not found."));
+    public Page<MusicListDTO> listByArtistAndAlbum(Long artistId, Long albumId, Pageable pageable) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new EntityNotFoundException("Artist not found!"));
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new EntityNotFoundException("Album not found!"));
 
-        String formatAlbumTitle = albumTitle.trim().replaceAll("\\s+", " ");
-        Album album = albumRepository.findAll().stream()
-                .filter(a -> a.getTitle().replaceAll("\\s+", "").equalsIgnoreCase(formatAlbumTitle.replaceAll("\\s+", "")))
-                .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("Album with title \"" + albumTitle + "\" not found."));
         return musicRepository.findAllByArtistAndAlbum(artist, album, pageable).map(MusicListDTO::new);
     }
 
     @Transactional
     public void update(Long id, @Valid MusicUpdateDTO dto) {
         if (dto.title() == null)
-            throw new EntityNotFoundException("\"Music\" field must be filled for update!");
+            throw new EntityNotFoundException("Title field must be filled for update!");
 
         Music music = musicRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Music with the id \"" + id + "\" not found!"));
+                .orElseThrow(() -> new EntityNotFoundException("Music not found!"));
+
+        if (musicRepository.existsByTitleIgnoreCaseAndArtistAndIdNot(dto.title(), music.getArtist(), id)) {
+            throw new IllegalArgumentException("Music with the title " + dto.title()
+                    + " from artist " + music.getArtist().getName()
+                    + " already exists!");
+        }
+
         music.update(dto);
 
     }
 
     @Transactional
     public void delete(Long id) {
+        if (!musicRepository.existsById(id)) {
+            throw new EntityNotFoundException("Music not found!");
+        }
         musicRepository.deleteById(id);
     }
 }

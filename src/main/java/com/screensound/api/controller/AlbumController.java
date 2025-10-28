@@ -12,6 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/albums")
@@ -20,16 +23,30 @@ public class AlbumController {
     @Autowired
     private AlbumService service;
 
-    //create movido para artist
+    @PostMapping
+    public ResponseEntity<Void> create(@RequestParam Long artistId, @RequestBody @Valid AlbumCreateDTO dto) {
+        Long id = service.create(artistId, dto);
+        URI uri = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(id)
+                .toUri();
+
+        return ResponseEntity.created(uri).build();
+    }
 
     @GetMapping
-    public ResponseEntity<Page<AlbumListDTO>> list(@PageableDefault(size = 20, sort = {"title"}) Pageable pageable) {
-        Page<AlbumListDTO> page = service.list(pageable);
+    public ResponseEntity<Page<AlbumListDTO>> list(@RequestParam(required = false) Long artistId, @PageableDefault(size = 20, sort = {"title"}) Pageable pageable) {
+
+        Page<AlbumListDTO> page = (artistId != null) ? service.listByArtist(artistId, pageable) : service.list(pageable);
         return ResponseEntity.ok(page);
     }
 
-
-
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody @Valid AlbumUpdateDTO dto) {
+        service.update(id, dto);
+        return ResponseEntity.noContent().build();
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id){
