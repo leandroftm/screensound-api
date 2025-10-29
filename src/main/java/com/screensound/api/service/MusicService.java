@@ -6,6 +6,8 @@ import com.screensound.api.dto.music.MusicUpdateDTO;
 import com.screensound.api.entity.Album;
 import com.screensound.api.entity.Artist;
 import com.screensound.api.entity.Music;
+import com.screensound.api.exceptions.DuplicateResourceException;
+import com.screensound.api.exceptions.ResourceNotFoundException;
 import com.screensound.api.repository.AlbumRepository;
 import com.screensound.api.repository.ArtistRepository;
 import com.screensound.api.repository.MusicRepository;
@@ -31,9 +33,9 @@ public class MusicService {
     public Long create(Long artistId, Long albumId, MusicCreateDTO dto) {
 
         Artist artist = artistRepository.findById(artistId)
-                .orElseThrow(() -> new EntityNotFoundException("Artist not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found!"));
         Album album = albumRepository.findById(albumId)
-                .orElseThrow(() -> new EntityNotFoundException("Album not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found!"));
 
 
         Music music = new Music(dto.title(), artist, album, dto.length());
@@ -49,16 +51,16 @@ public class MusicService {
     @Transactional(readOnly = true)
     public Page<MusicListDTO> listByArtist(Long artistId, Pageable pageable) {
         Artist artist = artistRepository.findById(artistId)
-                .orElseThrow(() -> new EntityNotFoundException("Artist not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found!"));
 
         return musicRepository.findAllByArtist(artist, pageable).map(MusicListDTO::new);
     }
 
     public Page<MusicListDTO> listByArtistAndAlbum(Long artistId, Long albumId, Pageable pageable) {
         Artist artist = artistRepository.findById(artistId)
-                .orElseThrow(() -> new EntityNotFoundException("Artist not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found!"));
         Album album = albumRepository.findById(albumId)
-                .orElseThrow(() -> new EntityNotFoundException("Album not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found!"));
 
         return musicRepository.findAllByArtistAndAlbum(artist, album, pageable).map(MusicListDTO::new);
     }
@@ -66,13 +68,13 @@ public class MusicService {
     @Transactional
     public void update(Long id, @Valid MusicUpdateDTO dto) {
         if (dto.title() == null)
-            throw new EntityNotFoundException("Title field must be filled for update!");
+            throw new IllegalArgumentException("Title field must be filled for update!");
 
         Music music = musicRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Music not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Music not found!"));
 
         if (musicRepository.existsByTitleIgnoreCaseAndArtistAndIdNot(dto.title(), music.getArtist(), id)) {
-            throw new IllegalArgumentException("Music with the title " + dto.title()
+            throw new DuplicateResourceException("Music with the title " + dto.title()
                     + " from artist " + music.getArtist().getName()
                     + " already exists!");
         }
@@ -84,7 +86,7 @@ public class MusicService {
     @Transactional
     public void delete(Long id) {
         if (!musicRepository.existsById(id)) {
-            throw new EntityNotFoundException("Music not found!");
+            throw new ResourceNotFoundException("Music not found!");
         }
         musicRepository.deleteById(id);
     }

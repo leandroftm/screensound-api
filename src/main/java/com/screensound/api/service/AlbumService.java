@@ -56,10 +56,10 @@ public class AlbumService {
             throw new IllegalArgumentException("Title field must be filled for update!");
 
         Album album = albumRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Album not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found!"));
 
         if(albumRepository.existsByTitleIgnoreCaseAndArtistAndIdNot(dto.title(), album.getArtist(), id)){
-            throw new IllegalArgumentException("Album with the title " + dto.title()
+            throw new ResourceNotFoundException("Album with the title " + dto.title()
                     + " from artist " + album.getArtist().getName()
                     + " already exists!");
         }
@@ -70,7 +70,7 @@ public class AlbumService {
     @Transactional
     public void delete(Long id) {
         if (!albumRepository.existsById(id)) {
-            throw new EntityNotFoundException("Album not found!");
+            throw new ResourceNotFoundException("Album not found!");
         }
         albumRepository.deleteById(id);
     }

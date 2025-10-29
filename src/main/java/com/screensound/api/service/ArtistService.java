@@ -4,6 +4,8 @@ import com.screensound.api.dto.artist.ArtistCreateDTO;
 import com.screensound.api.dto.artist.ArtistListDTO;
 import com.screensound.api.dto.artist.ArtistUpdateDTO;
 import com.screensound.api.entity.Artist;
+import com.screensound.api.exceptions.DuplicateResourceException;
+import com.screensound.api.exceptions.ResourceNotFoundException;
 import com.screensound.api.repository.ArtistRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +23,7 @@ public class ArtistService {
     @Transactional
     public Long create(ArtistCreateDTO dto) {
         if (repository.existsByNameIgnoreCase(dto.name())) {
-            throw new IllegalStateException("Artist name already created!");
+            throw new ResourceNotFoundException("Artist name already created!");
         }
         Artist artist = new Artist(dto);
         repository.save(artist);
@@ -43,7 +45,7 @@ public class ArtistService {
                 .orElseThrow(() -> new EntityNotFoundException("Artist not found!"));
 
         if(repository.existsByNameIgnoreCase(dto.name())){
-            throw new IllegalArgumentException("Artist with the name " + dto.name()
+            throw new DuplicateResourceException("Artist with the name " + dto.name()
                     + " already exists!");
         }
         artist.update(dto);
@@ -52,7 +54,7 @@ public class ArtistService {
     @Transactional
     public void delete(Long id) {
         if (!repository.existsById(id)) {
-            throw new EntityNotFoundException("Artist not found!");
+            throw new ResourceNotFoundException("Artist not found!");
         }
         repository.deleteById(id);
     }
