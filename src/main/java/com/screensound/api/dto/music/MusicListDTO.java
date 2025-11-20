@@ -9,8 +9,8 @@ public record MusicListDTO(
         String artistName,
         String albumName,
         Duration length
-        ) {
-    public MusicListDTO(Music music){
+) {
+    public MusicListDTO(Music music) {
         this(music.getTitle(), music.getArtist().getName(), music.getAlbum().getTitle(), music.getLength());
     }
 }

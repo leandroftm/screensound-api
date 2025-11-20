@@ -2,7 +2,6 @@ package com.screensound.api.entity;
 
 import com.screensound.api.dto.music.MusicUpdateDTO;
 import jakarta.persistence.*;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -27,9 +26,11 @@ public class Music {
     @Column(nullable = false)
     private String title;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Artist artist;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Album album;
 
@@ -43,12 +44,8 @@ public class Music {
         this.length = length;
     }
 
-    public void update(@Valid MusicUpdateDTO dto) {
+    public void update(MusicUpdateDTO dto) {
         this.title = dto.title();
-        if (dto.artist() != null)
-            this.artist = dto.artist();
-        if (dto.album() != null)
-            this.album = dto.album();
         this.length = dto.length();
     }
 }

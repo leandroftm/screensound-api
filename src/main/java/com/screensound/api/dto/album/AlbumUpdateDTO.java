@@ -1,12 +1,13 @@
 package com.screensound.api.dto.album;
 
-import com.screensound.api.entity.Artist;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
 public record AlbumUpdateDTO(
+        @NotNull
         String title,
-        Artist artist,
+        Long artistId,
         LocalDate releaseDate
 ) {
 }

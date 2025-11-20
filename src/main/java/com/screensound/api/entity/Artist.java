@@ -28,10 +28,10 @@ public class Artist {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Album> albums = new ArrayList<>();
 
-    @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Music> musics = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
@@ -41,10 +41,10 @@ public class Artist {
     @Column(nullable = false)
     private ArtistType artistType;
 
-    public Artist(ArtistCreateDTO dto) {
-        this.name = dto.name();
-        this.genre = dto.genre();
-        this.artistType = dto.artistType();
+    public Artist(String name, Genre genre, ArtistType artistType) {
+        this.name = name;
+        this.genre = genre;
+        this.artistType = artistType;
     }
 
     public void setMusics(List<Music> musics) {
@@ -73,7 +73,8 @@ public class Artist {
 
     public void update(ArtistUpdateDTO data) {
         this.name = data.name();
-        this.genre = (data.genre() != null) ? data.genre() : Genre.UNDEFINED;
+        if (data.genre() != null)
+            this.genre = data.genre();
         this.artistType = data.artistType();
     }
 }

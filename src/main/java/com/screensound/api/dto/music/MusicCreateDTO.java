@@ -1,14 +1,18 @@
 package com.screensound.api.dto.music;
 
-
-
-import com.screensound.api.entity.Album;
-import com.screensound.api.entity.Artist;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.Duration;
 
 public record MusicCreateDTO(
+        @NotBlank
         String title,
+        @NotNull
+        Long artistId,
+        @NotNull
+        Long albumId,
+        @NotNull
         Duration length
 ) {
 }

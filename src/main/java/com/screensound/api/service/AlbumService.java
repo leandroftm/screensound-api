@@ -5,13 +5,16 @@ import com.screensound.api.dto.album.AlbumCreateDTO;
 import com.screensound.api.dto.album.AlbumUpdateDTO;
 import com.screensound.api.entity.Album;
 import com.screensound.api.entity.Artist;
+import com.screensound.api.exceptions.DuplicateResourceException;
 import com.screensound.api.exceptions.ResourceNotFoundException;
 import com.screensound.api.repository.AlbumRepository;
 import com.screensound.api.repository.ArtistRepository;
+import com.screensound.api.spec.AlbumSpecs;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,52 +29,61 @@ public class AlbumService {
 
 
     @Transactional
-    public Long create(Long artistId, AlbumCreateDTO dto) {
-        Artist artist = artistRepository.findById(artistId)
-                .orElseThrow(() -> new ResourceNotFoundException("Artist not found!"));
-
+    public Long create(AlbumCreateDTO dto) {
+        Artist artist = findArtist(dto.artistId());
         Album album = new Album(dto.title(), artist, dto.releaseDate());
         albumRepository.save(album);
-
         return album.getId();
     }
 
-    @Transactional(readOnly = true)
-    public Page<AlbumListDTO> list(Pageable pageable) {
-        return albumRepository.findAll(pageable).map(AlbumListDTO::new);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<AlbumListDTO> listByArtist(Long artistId, Pageable pageable) {
-
-    Artist artist = artistRepository.findById(artistId)
-            .orElseThrow(() -> new ResourceNotFoundException("Artist not found!"));
-
-        return albumRepository.findAllByArtist(artist, pageable).map(AlbumListDTO::new);
+    public Page<AlbumListDTO> list(Long artistId, Pageable pageable) {
+        validateArtist(artistId);
+        Specification<Album> spec = AlbumSpecs.byArtistId(artistId);
+        return albumRepository.findAll(spec, pageable).
+                map(AlbumListDTO::new);
     }
 
     @Transactional
     public void update(Long id, AlbumUpdateDTO dto) {
-        if (dto.title() == null)
-            throw new IllegalArgumentException("Title field must be filled for update!");
-
-        Album album = albumRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Album not found!"));
-
-        if(albumRepository.existsByTitleIgnoreCaseAndArtistAndIdNot(dto.title(), album.getArtist(), id)){
-            throw new ResourceNotFoundException("Album with the title " + dto.title()
-                    + " from artist " + album.getArtist().getName()
-                    + " already exists!");
+        Album album = findAlbum(id);
+        validateAlbum(dto, album);
+        if (dto.artistId() != null) {
+            Artist artist = findArtist(dto.artistId());
+            album.setArtist(artist);
         }
-
         album.update(dto);
     }
 
     @Transactional
     public void delete(Long id) {
-        if (!albumRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Album not found!");
-        }
+        findAlbum(id);
         albumRepository.deleteById(id);
+    }
+
+    private Artist findArtist(Long artistId) {
+        return artistRepository.findById(artistId)
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found!"));
+    }
+
+    private Album findAlbum(Long albumId) {
+        return albumRepository.findById(albumId)
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found!"));
+    }
+
+    private void validateArtist(Long artistId) {
+        if (artistId != null && !artistRepository.existsById(artistId))
+            throw new ResourceNotFoundException("Artist not found!");
+    }
+
+    private void validateAlbum(AlbumUpdateDTO dto, Album album) {
+        Artist artist = dto.artistId() != null
+                ? findArtist(dto.artistId())
+                : album.getArtist();
+
+        if (albumRepository.existsByTitleIgnoreCaseAndArtistAndIdNot(dto.title(), artist, album.getId())) {
+            throw new DuplicateResourceException("Album with the title " + dto.title()
+                    + " from artist " + artist.getName()
+                    + " already exists!");
+        }
     }
 }

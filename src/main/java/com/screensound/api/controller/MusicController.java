@@ -23,34 +23,21 @@ public class MusicController {
     private MusicService service;
 
     @PostMapping
-    public ResponseEntity<Void> create(
-            @RequestParam Long artistId,
-            @RequestParam Long albumId,
-            @RequestBody @Valid MusicCreateDTO dto) {
-
-        Long id = service.create(artistId, albumId, dto);
+    public ResponseEntity<Void> create(@RequestBody @Valid MusicCreateDTO dto) {
+        Long id = service.create(dto);
         URI uri = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(id)
                 .toUri();
-
         return ResponseEntity.created(uri).build();
     }
 
     @GetMapping
-    public ResponseEntity<Page<MusicListDTO>> list(@RequestParam(required = false) Long artistId, @RequestParam(required = false) Long albumId, @PageableDefault(size = 30, sort = {"title"}) Pageable pageable) {
-        Page<MusicListDTO> page;
-        if (artistId != null && albumId != null) {
-            page = service.listByArtistAndAlbum(artistId, albumId, pageable);
-        } else if (artistId != null) {
-            page = service.listByArtist(artistId, pageable);
-        } else {
-            page = service.list(pageable);
-        }
+    public ResponseEntity<Page<MusicListDTO>> list(Long artistId, Long albumId, @PageableDefault(size = 30, sort = {"title"}) Pageable pageable) {
+        Page<MusicListDTO> page = service.list(artistId, albumId, pageable);
         return ResponseEntity.ok(page);
     }
-
 
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody @Valid MusicUpdateDTO dto) {
@@ -63,6 +50,4 @@ public class MusicController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
-
-
 }

@@ -7,7 +7,6 @@ import com.screensound.api.entity.Artist;
 import com.screensound.api.exceptions.DuplicateResourceException;
 import com.screensound.api.exceptions.ResourceNotFoundException;
 import com.screensound.api.repository.ArtistRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,44 +17,43 @@ import org.springframework.transaction.annotation.Transactional;
 public class ArtistService {
 
     @Autowired
-    private ArtistRepository repository;
+    private ArtistRepository artistRepository;
 
     @Transactional
     public Long create(ArtistCreateDTO dto) {
-        if (repository.existsByNameIgnoreCase(dto.name())) {
-            throw new ResourceNotFoundException("Artist name already created!");
+        if (artistRepository.existsByNameIgnoreCase(dto.name())) {
+            throw new DuplicateResourceException("Artist name already created!");
         }
-        Artist artist = new Artist(dto);
-        repository.save(artist);
+        Artist artist = new Artist(dto.name(), dto.genre(), dto.artistType());
+        artistRepository.save(artist);
         return artist.getId();
     }
 
-
-    @Transactional(readOnly = true)
     public Page<ArtistListDTO> list(Pageable pageable) {
-        return repository.findAll(pageable).map(ArtistListDTO::new);
+        return artistRepository.findAll(pageable)
+                .map(ArtistListDTO::new);
     }
 
     @Transactional
     public void update(Long id, ArtistUpdateDTO dto) {
-        if (dto.name() == null && dto.artistType() == null)
-            throw new IllegalArgumentException("At least one field must be filled to update!");
-
-        Artist artist = repository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Artist not found!"));
-
-        if(repository.existsByNameIgnoreCase(dto.name())){
-            throw new DuplicateResourceException("Artist with the name " + dto.name()
-                    + " already exists!");
-        }
+        validateArtist(dto.name(), id);
+        Artist artist = findArtist(id);
         artist.update(dto);
     }
 
-    @Transactional
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Artist not found!");
+        findArtist(id);
+        artistRepository.deleteById(id);
+    }
+
+    private Artist findArtist(Long artistId) {
+        return artistRepository.findById(artistId)
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found!"));
+    }
+
+    private void validateArtist(String artistName, Long artistId) {
+        if (artistRepository.existsByNameIgnoreCaseAndIdNot(artistName, artistId)) {
+            throw new DuplicateResourceException("Artist " + artistName + " already exists!");
         }
-        repository.deleteById(id);
     }
 }

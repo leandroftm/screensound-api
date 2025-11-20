@@ -3,7 +3,6 @@ package com.screensound.api.controller;
 import com.screensound.api.dto.album.AlbumListDTO;
 import com.screensound.api.dto.album.AlbumCreateDTO;
 import com.screensound.api.dto.album.AlbumUpdateDTO;
-import com.screensound.api.entity.Album;
 import com.screensound.api.service.AlbumService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,21 +23,19 @@ public class AlbumController {
     private AlbumService service;
 
     @PostMapping
-    public ResponseEntity<Void> create(@RequestParam Long artistId, @RequestBody @Valid AlbumCreateDTO dto) {
-        Long id = service.create(artistId, dto);
+    public ResponseEntity<Void> create(@RequestBody @Valid AlbumCreateDTO dto) {
+        Long id = service.create(dto);
         URI uri = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(id)
                 .toUri();
-
         return ResponseEntity.created(uri).build();
     }
 
     @GetMapping
-    public ResponseEntity<Page<AlbumListDTO>> list(@RequestParam(required = false) Long artistId, @PageableDefault(size = 20, sort = {"title"}) Pageable pageable) {
-
-        Page<AlbumListDTO> page = (artistId != null) ? service.listByArtist(artistId, pageable) : service.list(pageable);
+    public ResponseEntity<Page<AlbumListDTO>> list(Long artistId, @PageableDefault(size = 20, sort = {"title"}) Pageable pageable) {
+        Page<AlbumListDTO> page = service.list(artistId, pageable);
         return ResponseEntity.ok(page);
     }
 
@@ -49,7 +46,7 @@ public class AlbumController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id){
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

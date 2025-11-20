@@ -4,7 +4,6 @@ import com.screensound.api.dto.album.AlbumUpdateDTO;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +24,7 @@ public class Album {
     @NotNull
     @Column(nullable = false)
     private String title;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Artist artist;
     @OneToMany(mappedBy = "album", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Music> musics = new ArrayList<>();
@@ -52,8 +51,6 @@ public class Album {
 
     public void update(AlbumUpdateDTO dto) {
         this.title = dto.title();
-        if (dto.artist() != null)
-            this.artist = dto.artist();
         this.releaseDate = dto.releaseDate();
     }
 }
